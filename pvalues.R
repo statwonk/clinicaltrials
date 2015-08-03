@@ -61,41 +61,68 @@ d <- d %>%
   filter(left >= 0 & left <= 1,
          right >= 0 & right <= 1)
 
-d <- as.data.frame(d)
-fit <- fitdistcens(
-  d[, c("left", "right")],
-  "beta",
-  start = list(shape1 = 1, shape2 = 3))
-b1 <- bootdistcens(fit, niter = 10)
-plot(b1)
+tryCatch({
+  fitdistcens(
+    as.data.frame( # fitdistcense requires data.frame object
+      d[, c("left", "right")]),
+    "beta",
+    start = list(shape1 = 1,
+                 shape2 = 3),
+    gr = "BFGS", # tried working with optim to see
+    method = "BFGS", # if I could get it to optimize
+    lower = 0, # no luck.
+    upper = 1)
+},
+finally = print(
+  "Errors because apparently
+   fitdistcens (or optim) can't
+   handle beta values of 0 or 1??"))
 
-d %>%
+d <- d %>%
+  # throwing away values of 0 or 1.
+  filter(left > 0 & left < 1,
+         right > 0 & right < 1)
+
+censfit <- fitdistcens(
+  as.data.frame( # fitdistcense requires data.frame object
+    d[, c("left", "right")]),
+  "beta",
+  start = list(shape1 = 1,
+               shape2 = 3))
+
+d <- d %>%
   filter(left == right) %>%
   select(left)
 
-ggplot(
-  data.frame(
-  x = rbeta(length(d$left),
-      shape1 = median(b1$estim$shape1),
-      shape2= median(b1$estim$shape2))),
-  aes(x = x)) +
-  geom_histogram(binwidth = 0.001)
+fit <- fitdist(data = d$left, "beta")
+ppcomp(fit,
+       xlim = c(0, 0.06),
+       ylim = c(0, 0.06))
+ppcomp(fit)
 
-plot(fit, leftNA = 0, rightNA = 0)
+b_fit <- bootdist(fit,
+                  niter = 10)
+b_cens <- bootdistcens(censfit,
+                       niter = 10)
 
-d %>%
-  select(left, P_VALUE, right)
-
-ggplot(d[d$left == d$right, ],
-       aes(x = left)) +
-  geom_histogram(binwidth = 0.001,
-                 colour = "red") +
-  geom_vline(xintercept = 0.05) +
-  scale_x_continuous(breaks = seq(0, 1, 0.01)) +
-  coord_cartesian(xlim = c(0, 0.5)) +
-  ggtitle("All ClinicalTrials.gov p-values") +
-  theme_bw(base_size = 25)
-
-
-
+ggplot() +
+  geom_density(
+    data = data.frame(
+      x = rbeta(length(d$left),
+                shape1 = median(b_fit$estim$shape1),
+                shape2= median(b_fit$estim$shape2))),
+    aes(x = x),
+    colour = "blue") +
+  geom_density(
+    data = data.frame(
+      x = rbeta(length(d$left),
+                shape1 = median(b_cens$estim$shape1),
+                shape2= median(b_cens$estim$shape2))),
+    aes(x = x),
+    colour = "green") +
+  geom_density(
+    data = data.frame(
+      x = d$left),
+    aes(x = x),
+    colour = "red")
 
