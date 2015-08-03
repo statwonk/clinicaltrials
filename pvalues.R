@@ -6,6 +6,7 @@ library(ggplot2)
 library(ggthemes)
 library(fitdistrplus)
 
+# Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
 d <- fread("results_outcome_analysis.txt")
 
 d <- as.data.frame(d)
