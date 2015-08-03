@@ -8,9 +8,23 @@ library(fitdistrplus)
 
 # Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
 d <- fread("results_outcome_analysis.txt")
+d <- tbl_df(as.data.frame(d))
 
-d <- as.data.frame(d)
-d <- tbl_df(d) %>%
+# These data are censored. Sometimes authors report p-values
+# inexactly ( ~ 21% of all p-values), like < 0.01 or > 0.05.
+prop.table(
+  xtabs(~ grepl("<", P_VALUE) | grepl(">", P_VALUE),
+        data = d)
+)
+# Truly, if you think about it all p-values are censored because
+# there are limits to the precision that computers operate under.
+# However, since there's obvious censoring let's treat it as such.
+# For example, you'll notice below that right-censored values like,
+# " < 0.05" are turned in to a range like: [0, 0.05]. Exact values
+# are treated like [0.05, 0.05], and left-censored values are treated
+# like [0.05, 1] ( > 0.05).
+
+d <- d %>%
   mutate(# simple case, p-values are numeric
     left = as.numeric(P_VALUE),
     right = as.numeric(P_VALUE),
@@ -41,10 +55,11 @@ d <- tbl_df(d) %>%
                    as.numeric(
                      gsub("=", "", P_VALUE)
                    ), right)) %>%
-  filter(left > 0,
-         right > 0,
-         left < 1,
-         right < 1)
+  # there are a handful of values that fall outside of values that actually
+  # fall outside the allowed range of p-values (probabilities must range
+  # from 0 to 1). ** I'll simply throw those away. **
+  filter(left >= 0 & left <= 1,
+         right >= 0 & right <= 1)
 
 d <- as.data.frame(d)
 fit <- fitdistcens(
