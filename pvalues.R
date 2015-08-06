@@ -39,6 +39,32 @@ ggplot(tbl_df(d[grepl("<0.", P_VALUE)]) %>%
   annotate(geom = "text", x = "<0.05", y = 750,
            label = "500 Sloppily reported p-values")
 
+ggplot(d,
+       aes(x = as.numeric(P_VALUE))) +
+  geom_histogram(
+    breaks = seq(0, 1, 0.001)) +
+  geom_vline(xintercept = c(0.01, 0.05),
+             colour = "red") +
+  xlab("P-values") +
+  ylab("Studies") +
+  theme_tufte(base_size = 30)
+# ggsave(filename = "p_values.svg", p,
+#        width = 12,
+#        height = 8)
+
+p <- ggplot(d,
+            aes(x = as.numeric(P_VALUE))) +
+  geom_histogram(
+    breaks = seq(0, 1, 0.005)) +
+  geom_vline(xintercept = c(0.01, 0.05),
+             colour = "red") +
+  xlab("P-values") +
+  ylab("Studies") +
+  theme_tufte(base_size = 30)
+p
+# ggsave(filename = "p_values.svg", p,
+#        width = 12,
+#        height = 8)
 # Truly, if you think about it all p-values are censored because
 # there are limits to the precision that computers operate under.
 # However, since there's obvious censoring let's treat it as such.
