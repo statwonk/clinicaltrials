@@ -2,6 +2,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(ggthemes)
+library(scales)
 library(fitdistrplus)
 
 # Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
