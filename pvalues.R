@@ -65,6 +65,14 @@ p
 # ggsave(filename = "p_values.svg", p,
 #        width = 12,
 #        height = 8)
+
+p_zoom <- p +
+  coord_cartesian(xlim = c(0, 0.3))
+p_zoom
+# ggsave(filename = "p_values_zoom.svg", p_zoom,
+#        width = 12,
+#        height = 8)
+
 # Truly, if you think about it all p-values are censored because
 # there are limits to the precision that computers operate under.
 # However, since there's obvious censoring let's treat it as such.
