@@ -1,6 +1,4 @@
-library(devtools)
 library(data.table)
-# install_github("hadley/dplyr@c58a6152406e0130ad4033cb7646de16439b99ea")
 library(dplyr)
 library(ggplot2)
 library(ggthemes)
