@@ -13,6 +13,32 @@ d <- fread("results_outcome_analysis.txt")
 prop.table(
   xtabs(~ grepl("<", P_VALUE) | grepl(">", P_VALUE),
         data = d)
+) # It's not surprising to me that ~ 1 in 5 p-values
+# are censored, but it complicates analyzing the data.
+# Censorship is an important aspect that needs to be
+# respected when analyzing data. Bad things happen
+# when you don't respect censoring.
+table(d$P_VALUE[grepl("<", d$P_VALUE)])
+
+ggplot(tbl_df(d[grepl("<0.", P_VALUE)]) %>%
+         group_by(P_VALUE) %>%
+         summarise(count = n()),
+       aes(x = P_VALUE,
+           y = count)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = comma,
+                     breaks = seq(0, length(d$P_VALUE), 500)) +
+  ylab("Count") +
+  theme_bw(base_size = 25) +
+  theme(axis.text.x = element_text(
+    size = 10,
+    angle = 45,
+    hjust = 1,
+    vjust = 1),
+    panel.grid.minor = element_blank()) +
+  annotate(geom = "text", x = "<0.05", y = 750,
+           label = "500 Sloppily reported p-values")
+
 # Truly, if you think about it all p-values are censored because
 # there are limits to the precision that computers operate under.
 # However, since there's obvious censoring let's treat it as such.
