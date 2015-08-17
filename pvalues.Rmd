@@ -36,7 +36,7 @@ library(RCurl)
 #                ssl.verifypeer=0L, followlocation=1L)
 # 
 # d <- fread(data)
-d <- fread("~/clinicaltrials/data/results_outcome_analysis.txt")
+d <- fread("https://github.com/statwonk/aact/blob/master/results_outcome_analysis.txt")
 d <- tbl_df(as.data.frame(d))
 ```
 
