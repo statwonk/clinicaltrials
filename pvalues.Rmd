@@ -1,0 +1,369 @@
+---
+title: Are ClinicalTrials.gov p-values clustered around 0.05?
+author: Christopher Peters
+date: `r Sys.Date()`
+output:
+rmarkdown::html_vignette
+
+---
+
+> ... no scientific worker has a fixed level of significance at which from year to year, and in all circumstances, he [sic] rejects hypotheses; he rather gives his mind to each particular case in the light of his evidence and his ideas.
+--- R.A. Fisher (1959, p.42) [^fisher-methods-and-inference] as quoted in _P Values are not Error Probabilities_ (Hubbard and Bayarri 2003) [^p-values-are-not-error-probabilities]
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+library(knitr)
+opts_chunk$set(fig.path="../../images/",
+               cache=FALSE,
+               message=FALSE,
+               warning=FALSE,
+               echo=FALSE)
+```
+
+```{r}
+library(data.table)
+library(devtools)
+# install_github("hadley/dplyr@c58a6152406e0130ad4033cb7646de16439b99ea")
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(scales)
+library(RCurl)
+```
+
+```{r, cache=FALSE}
+# Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
+# data <- getURL("https://raw.githubusercontent.com/statwonk/aact/master/results_outcome_analysis.txt",
+#                ssl.verifypeer=0L, followlocation=1L)
+# 
+# d <- fread(data)
+d <- fread("~/clinicaltrials/data/results_outcome_analysis.txt")
+d <- tbl_df(as.data.frame(d))
+```
+
+[ClinicalTrials.gov](https://clinicaltrials.gov/) is probably largest public repository of scientific research in the world. It contains over `r library(scales); comma(length(d$P_VALUE))` p-values.
+
+I wanted to answer a simple question: **are they clustered around 0.05?**
+
+My interest was sparked by [a blog post showcasing a histogram of p-values](https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/) from a handful of psychology journals. [^peculiar-p-value-journals]
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+library(png)
+library(grid)
+img <- readPNG('pv1.png')
+grid.raster(img)
+```
+Source: [Larry Wasserman, Normal Deviate](https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/)
+
+Here's a similar histogram of p-values from the ClinicalTrials.gov database:
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+ggplot(d,
+       aes(x = as.numeric(d$P_VALUE))) +
+  geom_histogram(fill = "pink", colour = "black",
+                 breaks = seq(0, 1, 0.005)) +
+  geom_vline(xintercept = 0.05) +
+  scale_y_continuous(breaks = pretty_breaks(10),
+                     labels = comma) +
+  scale_x_continuous(breaks = pretty_breaks(10)) +
+  ylab("Frequency") +
+  xlab("P-values") +
+  coord_cartesian(xlim = c(0, 0.1)) +
+  theme_few(base_size = 15) +
+  theme(axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title.y = element_text(vjust = 1))
+```
+
+The two histograms look very different. The Clinical Trials p-values appear to be grouped much closer to 0. In my opinion there's not a visually apparent significant cluster like the Psychology journal-sourced p-values.
+
+If I reduce the histogram's bins from 0.005 to 0.001 clusters around round values like 0.01, 0.02, 0.03, 0.04, 0.05, ... become apparent.
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+ggplot(d,
+       aes(x = as.numeric(d$P_VALUE))) +
+  geom_histogram(fill = "pink", colour = "black",
+                 breaks = seq(0, 1, 0.001)) +
+  geom_vline(xintercept = 0.05) +
+  scale_y_continuous(breaks = pretty_breaks(10),
+                     labels = comma) +
+  scale_x_continuous(breaks = pretty_breaks(10)) +
+  ylab("Frequency") +
+  xlab("P-values") +
+  coord_cartesian(xlim = c(0, 0.1)) +
+  theme_few(base_size = 15) +
+  theme(axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title.y = element_text(vjust = 1))
+```
+
+There do appear to be more values around the 0.05 space than you might expect given counts around the other rounded p-values, here are just values rounded to the hundredths digit (the spikes 0.01, 0.02, 0.3, etc).
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+ggplot(tbl_df(
+  as.data.frame(d)) %>%
+    mutate(P_VALUE = as.numeric(P_VALUE)) %>%
+    filter(!is.na(P_VALUE),
+           P_VALUE >= 0 & P_VALUE <= 1) %>%
+    group_by(P_VALUE) %>%
+    summarise(count = n()) %>%
+    filter(P_VALUE %in% seq(0, 1, 0.01)),
+  aes(x = P_VALUE,
+      y = count)) +
+  geom_bar(stat = "identity", fill = "pink", colour = "black") +
+  geom_vline(xintercept = 0.05) +
+  scale_y_continuous(breaks = pretty_breaks(10),
+                     labels = comma) +
+  scale_x_continuous(breaks = pretty_breaks(10)) +
+  ylab("Frequency") +
+  xlab("P-values") +
+  coord_cartesian(xlim = c(-0.005, 0.105)) +
+  theme_few(base_size = 15) +
+  theme(axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title.y = element_text(vjust = 1))
+```
+
+Visually there are about 100 extra studies with a value of 0.05 than I'd expect given the consistent decline from 0.01 through 0.10. Overall the p-values from ClinicalTrials.gov showed _much less_ clustering than I originally expected. I have to admit I expected to see visually obvious clustering, so these p-values aren't looking bad, especailly compared to the Psychology journals.
+
+## The details
+
+A p-value is a basic expression of "rareness" of data given a Hypothesis $H$. Notice the lack of subscript, like $H_0$ or $H_1$. This is intentional and crucially important.
+
+The p-value was popularized by Ronald Aylmer "R.A." Fisher and as Hubbard and Bayarri note (2003) [^p-values-are-not-error-probabilities], to Fisher its calculated value represented, "a measure of evidence for the 'objective' disbelief in the null hypothesis; it had no long-run frequentist characteristics." To Fisher p-values are a measure of rareness of a result and given a small p-value, we are left with two possible conclusions:
+
+1. "... the hypothesis is not true," (Fisher 1960, p.8) [^fisher-scientific-reasoning]
+
+2. "... an exceptionally rare outcome has occurred," (Fisher 1960, p.8) [^fisher-scientific-reasoning]
+
+In sharp contrast to Fisher's p-values are Jerzy Neyman and Egon Pearson's $\alpha$ values. They (shockingly to me) are unrelated (unless one takes the extra and uninformative step of calculating the p-value of a given test statistic).
+
+$\alpha$ values as we are taught in statistics school are long-run probabilities of Type I errors. A Type I error is rejecting the null hypothesis when it is true --- analogous to convicting an innocent person (given innonocence is presumed). Therefore, _the particulary value_ of any p-value is meaningless in the framework of Neyman-Pearson ($H_0$ / $H_1$-style testing). With the usual hypothesis testing the only consideration is whether the p-value is less than or greater than a chosen $\alpha$. Indeed as Hubbard and Bayarri found (p. 10) [^p-values-are-not-error-probabilities],
+
+> Without hoping to know whether each separate hypothesis is true or false, we may search for rules to govern our behaviour with regard to them, in following which we insure that, in the long run of experience, we shall not be too often wrong. (Neyman and Pearson 1933, p. 291) [^on-the-problem-of-the-most-efficient-tests-of-stat-hypos]
+
+It's clear, Neyman and Pearson had no concern for the individual p-value only whether the in repeated sampling p-values were less than $\alpha$s.
+
+This was Earth-shattering to me. For example, the canonical graduate statistics textbook, _Casella and Berger_ has it wrong,
+
+> A _p-value_ $p(\bf{X})$ is a test statistic satisfying $0\leq p(x)\leq1$ for every sample point $\bf{x}$ Small values of $p(\bf(X))$ give evidence that $H_1$ is true.
+
+... and to leave no doubt, Casella and Berger (2002) [^casella-and-berger] go on to say,
+
+> Furthermore, the smaller the p-value, the stronger the evidence for rejecting $H_0$. Hence, a p-value reports the results of a test on a more continuous scale, rather than just the dichotomous decision "Accept $H_0$", or "Reject $H_0$".
+
+So even Cassella and Berger appear to be mixing Fisher's and Neyman-Pearson's methods, despite clear, repeated and strong objections from both parties.
+
+I'd like to stop to give all of the credit for the above insights to Raymond Hubbard and M.J. Bayarri. ([Checkout the Hacker News discussion of their paper](https://news.ycombinator.com/item?id=9330076).)
+
+>  Many researchers will [no] doubt be surprised by the statisticians' confusion over the correct meaning and interpretation of _p_ values and $\alpha$ levels. After all, one might anticipate the properties of these widely used statistical meaures would be completely understood. But this is not the case. (Hubbard and Bayarri 2003)
+
+Originally I had thought that reported p-values like, "< 0.05" might simply be censored or truncated data. ```r percent(
+prop.table(
+xtabs(~ grepl("<", P_VALUE) | grepl(">", P_VALUE),
+data = d)
+)[2]
+); ``` of all the p-values are reported like this. For example,
+
+```{r}
+head(table(d$P_VALUE[grepl("<", d$P_VALUE)]), 10)
+```
+
+So I have a bit of a conuundrum. It's easy to visualize numeric-coded p-values like 0.0123, but at the same time I highly doubt the authors of ```r comma(length(d$P_VALUE[grepl("<", d$P_VALUE) | grepl(">", d$P_VALUE)]))``` p-values out of ```r comma(length(d$P_VALUE[!grepl("<", d$P_VALUE) & !grepl(">", d$P_VALUE)]))``` are using Fisher's single $H$ method (where the actual values matter). The devil's advocate might argue that the points are recorded simply to enable the second researcher to set their own $\alpha$ --- I highly doubt it. So then should I really be focused on the acceptance and rejections?
+
+The original and more sophisticated approach I was hoping to take was fitting a parametric model, a $\beta$ distribution.
+
+Larry Wasserman offers a mixed model [^normal-deviate],
+
+$$h(p) = (1 - \pi)u(p) + \pi g(p)$$
+
+where $\pi$ is the share of results rejecting the null hypothesis and accepting the alternative hypothesis. Under this model, if the null hypothesis is true, we would expect p-values $u(p)$ to follow a uniform distribution. This made intuitive sense to me.
+
+Indeed _Casella and Berger_ (2002) [^casella-and-berger] reminded me, that we can transform any continuous random variable into a uniform random variable by way of the Probability Integral Transformation (Fisher's?). _Casella and Berger_ state,
+
+> Hence, by the Probability Integral Transformation ..., the distribution of $p_\theta(\bf{X})$ is stochastically greater than or equal to a uniform(0, 1) distribution. That is, for every $0\leq \alpha \leq 1$, $P_\theta(p_\theta(\bf{X}\leq\alpha)) \leq \alpha$. Because $p(x) = \sup_{\theta'\in\Theta_0}p_{\Theta'}(x) \geq p_\Theta(x)$ for every x,
+
+$$P_{\Theta} (p(\bf{X}\leq\alpha))\leq P_{\Theta}(p_{\Theta}(\bf{X})\leq X\leq\alpha)\leq \alpha$$
+
+Holy cow. That's mighty terse and I have to bear my hands, I don't yet exactly understand why this is true. I feel like I could re-read this a million times and still be inching closer to the reason it implies p-values are uniformily distributed under the true null. As a note there is an interesting discussion of the question on [StackExchange](http://stats.stackexchange.com/questions/10613/why-are-p-values-uniformly-distributed-under-the-null-hypothesis). What's interesting of course is that uniform $p$s are defined in terms of $\alpha$s (Neyman and Pearson's method). [Another proof](https://joyeuserrance.wordpress.com/2011/04/22/proof-that-p-values-under-the-null-are-uniformly-distributed/)
+
+Okay, so we have $u(p)$ under the case that the null is true at least given $\alpha$s. But what about when it's false?
+
+The data shown in the [Normal Deviate blog](normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/) post come from the article _A peculiar prevalence of p values just below 0.05_ [^peculiar-p-values]. In the article the authors fit an exponential distribution to the data, but don't offer much justification for their decision.
+
+Dave Giles [offers a very interesting post on the matter](http://davegiles.blogspot.com/2011/04/may-i-show-you-my-collection-of-p.html), showing that we can _at least_ say that the distribution of under the alternative is not uniform.
+
+It makes intuitve sense to me that there would be no particular theoretial distribution of p-values under the assumption the alternative is true. As a researcher learns their craft, are they not more likely to run better experiements more likely to yield smaller p-values (or at least smaller than the usual $alpha$s?).
+
+```{r}
+library(fitdistrplus)
+censor_friendly <- d %>%
+  mutate(# simple case, p-values are numeric
+    left = as.numeric(P_VALUE),
+    right = as.numeric(P_VALUE),
+    # if a p-value looks like < 0.01, its left-bound is 0
+    left = ifelse(grepl("<", P_VALUE),
+                  0, left),
+    # if a p-value looks like > 0.01, its right-bound is 1
+    right = ifelse(grepl(">", P_VALUE),
+                   1, right),
+    # if a p-value looks like < 0.01, its right-bound is 0.01
+    right = ifelse(grepl("<", P_VALUE),
+                   as.numeric(
+                     gsub("<", "", gsub("<=", "", P_VALUE))),
+                   right),
+    # if a p-value looks like > 0.01, its left-bound is 0.01
+    left = ifelse(grepl(">", P_VALUE),
+                  as.numeric(
+                    gsub(">", "", gsub(">=", "", P_VALUE))),
+                  left)) %>%
+  mutate(
+    # if a p-value looks like '= 0.01', its left-bound is 0.01
+    left = ifelse(grepl("=", P_VALUE) & !grepl("<", P_VALUE) & !grepl(">", P_VALUE),
+                  as.numeric(
+                    gsub("=", "", P_VALUE)
+                  ), left),
+    # if a p-value looks like '= 0.01', its right-bound is 0.01
+    right = ifelse(grepl("=", P_VALUE) & !grepl("<", P_VALUE) & !grepl(">", P_VALUE),
+                   as.numeric(
+                     gsub("=", "", P_VALUE)
+                   ), right)) %>%
+  # there are a handful of values that fall outside of values that actually
+  # fall outside the allowed range of p-values (probabilities must range
+  # from 0 to 1).
+  # ** I'll simply throw those away. **
+  # Have a better idea? Drop me a line.
+  # Also, notice that I throw away values of
+  # 0 and 1. We're about to fit a Beta
+  # distribution, which does not have support
+  # inclusive of 0 or 1. I'm guessing this is
+  # part of the reason that fitdistcens
+  # won't fit a vector with those values.
+filter(left > 0 & left < 1,
+       right > 0 & right < 1)
+
+censor_friendly <- as.data.frame(censor_friendly)
+```
+
+#### Exponential fit
+
+```{r}
+# I highly recommend the fitdistplus
+# package. It's incredibly useful for
+# parametric fitting.
+exponential_fit <- fitdistcens(
+  censor_friendly[, c("left", "right")],
+  "exp",
+  start = list(rate = 0.2))
+
+# A look at the fit.
+exponential_fit
+```
+
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+# Not a bad fit! However, p-values don't follow a
+# theoretical distribution. Under the null, p-values
+# are uniform(0, 1) distributed, but no such theory
+# underpins the alternative. The final product,
+# published p-values are a mixture of a uniform(0, 1)
+# distribution and some other distribution that represents
+# how successful scientists are at leveraging their prior
+# knowledge / information for designing and carrying out
+# experiments.
+plot(exponential_fit)
+```
+It's clear that the exponential distribution does not fit this data well.
+
+#### Beta fit
+
+```{r}
+# I highly recommend the fitdistplus
+# package. It's incredibly useful for
+# parametric fitting.
+censor_friendly_beta_fit <- fitdistcens(
+  censor_friendly[, c("left", "right")],
+  "beta",
+  start = list(shape1 = 1, shape2 = 3))
+
+# A look at the fit.
+censor_friendly_beta_fit
+```
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+plot(censor_friendly_beta_fit)
+```
+
+Not bad!
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+plot(censor_friendly_beta_fit, xlim = c(0, 0.1), ylim = c(0, 0.4))
+```
+A closer inspection shows that using the Beta distribution fails to produce a great fit after all. Especially around the 0.05 space of interest.
+
+For the curious, simply throwing away the values encoded like "< 0.05" and focusing on non-censored (truncated?) observations doesn't change the fit much.
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+values <- as.numeric(d$P_VALUE)
+# Not exaclty sure the reason but optim doesn't
+# like values of 0 or 1 for Beta. I've found
+# sources that show Beta with support inclusive
+# of 0, 1 and others exclusive.
+values <- values[!is.na(values)]
+values <- values[values > 0 & values < 1]
+beta_fit <- fitdist(
+  values,
+  "beta",
+  start = list(shape1 = 1, shape2 = 3))
+cdfcomp(beta_fit, xlim = c(0, 0.1), ylim = c(0, 0.4))
+abline(v = 0.05, col = 'black')
+```
+Here's a Q-Q (quantile) plot for an even clearer view (with a vertical line at the probability that represents the value 0.05),
+
+```{r, fig.width=7, fig.height=7, fig.align='center'}
+qqcomp(beta_fit,
+       xlim = c(0, ecdf(values)(0.1)),
+       ylim = c(0, ecdf(values)(0.1)))
+abline(v = 0.05, col = 'black')
+```
+
+Thought it's not an unpopular approach, I seriously doubt the utility of fitting a parametric distribution and then looking at residuals. Masicampo and Lalande^{[^peculiar-p-values]} found that an exponential fit well, a Beta is a much better fit here, perhaps someone else will find a Gamma or some other distribution fits well. Without a theoretical underpinning to results under a true alternative hypothesis, how can we justify a parametric fit?
+
+Larry Wasserman[^normal-deviate] uses an interesting nonparametric approach based on order statistics. I played with this method a bit, but don't yet feel confident enough with it to offer its use here. If you'd like to contribute this method, it'd be appreciated at [https://github.com/statwonk/clinicaltrials].
+
+## The data
+
+The data for this analysis come from Aggregate Analysis of ClincalTrials.gov (AACT) database of the Clinical Trials Transformation Initiative (CTTI). You can download the data usd in this study from there: [http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database](http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database).
+
+I have also hosted the lastest unzipped files (that are less than 100mb) here: [https://github.com/statwonk/aact](https://github.com/statwonk/aact) I'm hoping to recieve access to Github's [Large File Storage](https://github.com/blog/1986-announcing-git-large-file-storage-lfs) support so I can add the rest of the files.
+
+By no means do I present this analysis as final. I strongly believe that learning is best a collaborative effort, so if you agree and are interested, I invite [Pull Requests](https://github.com/statwonk/clinicaltrials/pulls) and [Isssues](https://github.com/statwonk/clinicaltrials/issues) with feedback on Github.
+
+## Outstanding questions
+
+I had a lot of fun analyzing this data! There are some interesting questions that I would love to discuss further:
+
+-  Is it wrong to focus on particular p-values when using an alternative hypothesis?
+-  What share of researchers are using Fisher's single hypothesis / p-value method vs. Neyman-Pearson's $\alpha$ method?
+-  [Will banning p-values increase the quality of scientific research](Basic and Applied Social Psychology)?
+-  Is there a list of common statistical textbooks that make the distinction vs. those that do not?
+-  How can statisticians best help scientists understand the difference?
+  -  Should we [remain "shoe clerks" [sic]](http://statlab.bio5.org/sites/default/files/fall2014/bross-shoe-clerk74.pdf), educate, or all of the above?
+
+## References
+
+[^fisher-methods-and-inference]:[Statistical Methods and Scientific Induction,” Journal of the Royal Statistical Society, Ser. B., 17, 69–78]
+
+[^normal-deviate]:[https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/](https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/)
+
+[^peculiar-p-value-journals]:[_Journal of Experimental Psychology: General (JEPG)_, _Journal of Personality and Social Psychology_ (JPSP), and _Psychological Science_ (PS).]
+
+[^p-values-are-not-error-probabilities]:[http://www.uv.es/sestio/TechRep/tr14-03.pdf](http://www.uv.es/sestio/TechRep/tr14-03.pdf)
+
+[^fisher-scientific-reasoning]:[https://digital.library.adelaide.edu.au/dspace/handle/2440/15278](https://digital.library.adelaide.edu.au/dspace/handle/2440/15278)
+
+[^on-the-problem-of-the-most-efficient-tests-of-stat-hypos]:[http://www.stats.org.uk/statistical-inference/NeymanPearson1933.pdf](http://www.stats.org.uk/statistical-inference/NeymanPearson1933.pdf)
+
+[^casella-and-berger]:[Casella, George, and Roger L. Berger. Statistical Inference. 2nd ed. Thomson Learning, 2002. Print.]
+
+[^peculiar-p-values]:[http://www.tandfonline.com/doi/pdf/10.1080/17470218.2012.711335#.VdIBNCxVgl4](http://www.tandfonline.com/doi/pdf/10.1080/17470218.2012.711335#.VdIBNCxVgl4)
+

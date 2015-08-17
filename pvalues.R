@@ -4,74 +4,28 @@ library(ggplot2)
 library(ggthemes)
 library(scales)
 library(fitdistrplus)
+# image_output_path <- "~/statwonk/content/images/"
 
 # Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
-d <- fread("results_outcome_analysis.txt")
+d <- fread("data/results_outcome_analysis.txt")
 
 # These data are censored. Sometimes authors report p-values
 # inexactly ( ~ 21% of all p-values), like < 0.01 or > 0.05.
-prop.table(
-  xtabs(~ grepl("<", P_VALUE) | grepl(">", P_VALUE),
-        data = d)
-) # It's not surprising to me that ~ 1 in 5 p-values
+percent(
+  prop.table(
+    xtabs(~ grepl("<", P_VALUE) | grepl(">", P_VALUE),
+          data = d)
+  )[2]
+)# It's not surprising to me that ~ 1 in 5 p-values
 # are censored, but it complicates analyzing the data.
 # Censorship is an important aspect that needs to be
 # respected when analyzing data. Bad things happen
 # when you don't respect censoring.
+#
+# Further reading on censoring:
+# https://books.google.com/books?id=Q01YBAAAQBAJ&lpg=PT436&dq=Statistical%20Methods%20for%20Reliability%20Data&pg=PP1#v=onepage&q=Statistical%20Methods%20for%20Reliability%20Data&f=false
+# https://www.youtube.com/watch?v=XQfxndJH4UA
 table(d$P_VALUE[grepl("<", d$P_VALUE)])
-
-ggplot(tbl_df(d[grepl("<0.", P_VALUE)]) %>%
-         group_by(P_VALUE) %>%
-         summarise(count = n()),
-       aes(x = P_VALUE,
-           y = count)) +
-  geom_bar(stat = "identity") +
-  scale_y_continuous(labels = comma,
-                     breaks = seq(0, length(d$P_VALUE), 500)) +
-  ylab("Count") +
-  theme_bw(base_size = 25) +
-  theme(axis.text.x = element_text(
-    size = 10,
-    angle = 45,
-    hjust = 1,
-    vjust = 1),
-    panel.grid.minor = element_blank()) +
-  annotate(geom = "text", x = "<0.05", y = 750,
-           label = "500 Sloppily reported p-values")
-
-ggplot(d,
-       aes(x = as.numeric(P_VALUE))) +
-  geom_histogram(
-    breaks = seq(0, 1, 0.001)) +
-  geom_vline(xintercept = c(0.01, 0.05),
-             colour = "red") +
-  xlab("P-values") +
-  ylab("Studies") +
-  theme_tufte(base_size = 30)
-# ggsave(filename = "p_values.svg", p,
-#        width = 12,
-#        height = 8)
-
-p <- ggplot(d,
-            aes(x = as.numeric(P_VALUE))) +
-  geom_histogram(
-    breaks = seq(0, 1, 0.005)) +
-  geom_vline(xintercept = c(0.01, 0.05),
-             colour = "red") +
-  xlab("P-values") +
-  ylab("Studies") +
-  theme_tufte(base_size = 30)
-p
-# ggsave(filename = "p_values.svg", p,
-#        width = 12,
-#        height = 8)
-
-p_zoom <- p +
-  coord_cartesian(xlim = c(0, 0.3))
-p_zoom
-# ggsave(filename = "p_values_zoom.svg", p_zoom,
-#        width = 12,
-#        height = 8)
 
 # Truly, if you think about it all p-values are censored because
 # there are limits to the precision that computers operate under.
@@ -163,10 +117,16 @@ parametric_comparison_plot <- ggplot() +
   geom_histogram(
     data = data.frame(
       x = rbeta(length(d$left),
-                shape1 = fit$estimate[[1]],
-                shape2= fit$estimate[[2]])),
+                shape1 = round(fit$estimate[[1]], 2),
+                shape2=  round(fit$estimate[[2]]))),
     aes(x = x),
     binwidth = 0.001) +
+  scale_y_continuous(breaks = seq(0, length(d$P_VALUE), 250),
+                     labels = comma) +
+  ggtitle(
+    paste0("Empirical p-values vs. predicted by theoretical Beta(",
+           "alpha=", fit$estimate[[1]], ",",
+           "beta=", fit$estimate[[2]])) +
   theme_bw(base_size = 25)
 
 # This parametric fit is interesting to
