@@ -354,7 +354,7 @@ abline(v = 0.05, col = 'black')
 
 Thought it's not an unpopular approach, I seriously doubt the utility of fitting a parametric distribution and then looking at residuals. Masicampo and Lalande^{[^peculiar-p-values]} found that an exponential fit well, a Beta is a much better fit here, perhaps someone else will find a Gamma or some other distribution fits well. Without a theoretical underpinning to results under a true alternative hypothesis, how can we justify a parametric fit?
 
-Larry Wasserman[^normal-deviate] uses an interesting nonparametric approach based on order statistics. I played with this method a bit, but don't yet feel confident enough with it to offer its use here. If you'd like to contribute this method, it'd be appreciated at [https://github.com/statwonk/clinicaltrials].
+Larry Wasserman[^normal-deviate] uses an interesting nonparametric approach based on order statistics. I played with this method a bit, but don't yet feel confident enough with it to offer its use here. If you'd like to contribute this method, it'd be appreciated at [https://github.com/statwonk/clinicaltrials](https://github.com/statwonk/clinicaltrials).
 
 ## Outstanding questions
 
