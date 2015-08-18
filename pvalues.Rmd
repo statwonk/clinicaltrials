@@ -350,11 +350,14 @@ I had a lot of fun analyzing this data! There are some interesting questions tha
 
 ## References
 
-[^fisher-methods-and-inference]:[Statistical Methods and Scientific Induction,” Journal of the Royal Statistical Society, Ser. B., 17, 69–78]
+[^fisher-methods-and-inference]:"Statistical Methods and Scientific Induction,"" Journal of the Royal Statistical Society, Ser. B., 17, 69–78
 
 [^normal-deviate]:[https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/](https://normaldeviate.wordpress.com/2012/08/16/p-values-gone-wild-and-multiscale-madness/)
 
-[^peculiar-p-value-journals]:[_Journal of Experimental Psychology: General (JEPG)_, _Journal of Personality and Social Psychology_ (JPSP), and _Psychological Science_ (PS).]
+[^peculiar-p-value-journals]:
+ -  _Journal of Experimental Psychology: General (JEPG)_
+ -  _Journal of Personality and Social Psychology_ (JPSP)
+ -  _Psychological Science_ (PS)
 
 [^p-values-are-not-error-probabilities]:[http://www.uv.es/sestio/TechRep/tr14-03.pdf](http://www.uv.es/sestio/TechRep/tr14-03.pdf)
 
