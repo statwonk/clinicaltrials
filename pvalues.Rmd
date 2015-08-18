@@ -129,9 +129,9 @@ For context, here's a view including all numerically-reported p-values,
 ```{r, fig.width=7, fig.height=7, fig.align='center'}
 ggplot(d,
        aes(x = as.numeric(d$P_VALUE))) +
+  geom_vline(xintercept = 0.05, alpha = 0.5) +
   geom_histogram(fill = "red", alpha = 0.5,
                  breaks = seq(0, 1, 0.005)) +
-  geom_vline(xintercept = 0.05) +
   scale_y_continuous(breaks = pretty_breaks(10),
                      labels = comma) +
   scale_x_continuous(breaks = pretty_breaks(10)) +
