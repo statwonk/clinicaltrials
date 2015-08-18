@@ -122,7 +122,7 @@ ggplot(tbl_df(
         axis.title.y = element_text(vjust = 1))
 ```
 
-Visually there are about 100 extra studies with a value of 0.05 than I'd expect given the consistent decline from 0.01 through 0.10. Overall the p-values from ClinicalTrials.gov showed _much less_ clustering than I originally expected. I have to admit I expected to see visually obvious clustering, so these p-values aren't looking bad, especailly compared to the Psychology journals.
+Visually there are about 100 extra p-values with a value of 0.05 than I'd expect given the consistent decline from 0.01 through 0.10. Overall the p-values from ClinicalTrials.gov showed _much less_ clustering than I originally expected. I have to admit I expected to see visually obvious clustering, so these p-values aren't looking bad, especailly compared to the Psychology journals.
 
 ## The details
 
