@@ -32,11 +32,10 @@ library(RCurl)
 
 ```{r, cache=FALSE}
 # Source http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database
-# data <- getURL("https://raw.githubusercontent.com/statwonk/aact/master/results_outcome_analysis.txt",
-#                ssl.verifypeer=0L, followlocation=1L)
-# 
-# d <- fread(data)
-d <- fread("https://github.com/statwonk/aact/blob/master/results_outcome_analysis.txt")
+data <- getURL("https://raw.githubusercontent.com/statwonk/aact/master/results_outcome_analysis.txt",
+               ssl.verifypeer=0L, followlocation=1L)
+
+d <- fread(data)
 d <- tbl_df(as.data.frame(d))
 ```
 
