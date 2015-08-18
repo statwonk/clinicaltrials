@@ -142,6 +142,15 @@ ggplot(d,
         axis.text.x = element_text(angle = 90, vjust = 0.5),
         axis.title.y = element_text(vjust = 1))
 ```
+
+## The data
+
+The data for this analysis come from Aggregate Analysis of ClincalTrials.gov (AACT) database of the Clinical Trials Transformation Initiative (CTTI). You can download the data usd in this study from there: [http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database](http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database).
+
+I have also hosted the lastest unzipped files (that are less than 100mb) here: [https://github.com/statwonk/aact](https://github.com/statwonk/aact) I'm hoping to recieve access to Github's [Large File Storage](https://github.com/blog/1986-announcing-git-large-file-storage-lfs) support so I can add the rest of the files.
+
+By no means do I present this analysis as final. I strongly believe that learning is best a collaborative effort, so if you agree and are interested, I invite [Pull Requests](https://github.com/statwonk/clinicaltrials/pulls) and [Isssues](https://github.com/statwonk/clinicaltrials/issues) with feedback on Github.
+
 ## The details
 
 A p-value is a basic expression of "rareness" of data given a Hypothesis $H$. Notice the lack of subscript, like $H_0$ or $H_1$. This is intentional and crucially important.
@@ -346,14 +355,6 @@ abline(v = 0.05, col = 'black')
 Thought it's not an unpopular approach, I seriously doubt the utility of fitting a parametric distribution and then looking at residuals. Masicampo and Lalande^{[^peculiar-p-values]} found that an exponential fit well, a Beta is a much better fit here, perhaps someone else will find a Gamma or some other distribution fits well. Without a theoretical underpinning to results under a true alternative hypothesis, how can we justify a parametric fit?
 
 Larry Wasserman[^normal-deviate] uses an interesting nonparametric approach based on order statistics. I played with this method a bit, but don't yet feel confident enough with it to offer its use here. If you'd like to contribute this method, it'd be appreciated at [https://github.com/statwonk/clinicaltrials].
-
-## The data
-
-The data for this analysis come from Aggregate Analysis of ClincalTrials.gov (AACT) database of the Clinical Trials Transformation Initiative (CTTI). You can download the data usd in this study from there: [http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database](http://www.ctti-clinicaltrials.org/what-we-do/analysis-dissemination/state-clinical-trials/aact-database).
-
-I have also hosted the lastest unzipped files (that are less than 100mb) here: [https://github.com/statwonk/aact](https://github.com/statwonk/aact) I'm hoping to recieve access to Github's [Large File Storage](https://github.com/blog/1986-announcing-git-large-file-storage-lfs) support so I can add the rest of the files.
-
-By no means do I present this analysis as final. I strongly believe that learning is best a collaborative effort, so if you agree and are interested, I invite [Pull Requests](https://github.com/statwonk/clinicaltrials/pulls) and [Isssues](https://github.com/statwonk/clinicaltrials/issues) with feedback on Github.
 
 ## Outstanding questions
 
